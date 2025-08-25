@@ -255,6 +255,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                     "currentPlaylist",
                     JSON.stringify(playlist.id)
                 );
+
                 libraryItemOld.classList.remove("active");
                 const playlistItem = document.createElement("div");
                 playlistItem.innerHTML = `<div class="library-item active" data-id="${escapeHtml(
@@ -285,6 +286,8 @@ document.addEventListener("DOMContentLoaded", async function () {
                     id: playlist.id,
                 };
                 localStorage.setItem("item", JSON.stringify(itemData));
+                const a = JSON.parse(localStorage.getItem("item"));
+                console.log(a);
                 artistHeroTitle.textContent = playlist.name;
                 artistHeroSubtitle.textContent =
                     playlist.description || playlist.bio;
@@ -423,9 +426,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                     data
                 );
 
-                const track = await httpRequest.get(
-                    `tracks/${trackItem.dataset.id}`
-                );
+                const track = await httpRequest.get(`tracks/${id}`);
                 const divElement = document.createElement("div");
                 divElement.innerHTML = `<div class="track-item">
                                     <div class="track-number">
@@ -459,15 +460,17 @@ document.addEventListener("DOMContentLoaded", async function () {
                                 </div>`;
                 trackList.appendChild(divElement);
                 const currentItem = musicPlayer.currentItem;
-                const itemData = localStorage.getItem("item");
+                const itemData = JSON.parse(localStorage.getItem("item"));
                 const { tracks } = await httpRequest.get(
                     `playlists/${itemData.id}/tracks`
                 );
+                console.log("tracks", tracks);
                 const dataFuture = {
-                    currentPlaylist: tracks.tracks,
+                    currentPlaylist: tracks,
                     currentSongIndex: 0,
                 };
                 if (
+                    !currentItem ||
                     itemData.id !== currentItem.id ||
                     itemData.type !== currentItem.type
                 ) {
@@ -487,6 +490,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             }
         }
     });
+
     searchLibraryBtn.addEventListener("click", () => {
         searchLibrary.value = "";
         searchLibrary.focus();
@@ -782,6 +786,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                     tracks = res.tracks;
                 }
                 const trackPlaylist = await getListTrackById(tracks);
+
                 const data = {
                     currentPlaylist: trackPlaylist,
                     currentTrackIndex: 0,
@@ -824,11 +829,18 @@ document.addEventListener("DOMContentLoaded", async function () {
                 musicPlayer.currentItem = itemData;
                 const data = JSON.parse(localStorage.getItem("futurePlayer"));
                 musicPlayer.songList = data.currentPlaylist;
-
                 localStorage.setItem("currentPlayer", JSON.stringify(data));
-                musicPlayer.isPlaying = true;
-                musicPlayer.currentSongIndex = -1;
-                musicPlayer.initialize();
+                try {
+                    musicPlayer.isPlaying = true;
+                    musicPlayer.currentSongIndex = -1;
+                    musicPlayer.initialize();
+                    console.log(musicPlayer);
+                } catch (error) {
+                    musicPlayer.isPlaying = true;
+                    musicPlayer.currentSongIndex = 0;
+                    musicPlayer.initialize();
+                    console.log(musicPlayer);
+                }
             } else {
                 iconPlayBtnLarge.classList.toggle("fa-pause");
                 iconPlayBtnLarge.classList.toggle("fa-play");
@@ -973,9 +985,9 @@ document.addEventListener("DOMContentLoaded", async function () {
 });
 document.addEventListener("DOMContentLoaded", function () {
     document.body.style.userSelect = "none";
-    document.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
-    });
+    // document.addEventListener("contextmenu", (e) => {
+    //     e.preventDefault();
+    // });
     const searchInput = document.querySelector(".search-input");
     let timeDelay;
     searchInput.addEventListener("input", () => {
@@ -1377,22 +1389,23 @@ function escapeHtml(str) {
     return div.innerHTML;
 }
 function renderTrackList(tracks) {
-    console.log(tracks);
     const artistHeroTitle = document.querySelector(".artist-hero-title");
     const artistHeroSubtitle = document.querySelector(".artist-hero-subtitle");
     const heroImage = document.querySelector(".hero-image");
     const trackList = document.querySelector(".track-list");
 
     let currentTrackIndex;
-    const itemData = JSON.parse(localStorage.getItem("item"));
+    //const itemData = JSON.parse(localStorage.getItem("item"));
     const currentPlayer = JSON.parse(localStorage.getItem("currentPlayer"));
+
     currentTrackIndex = currentPlayer?.currentTrackIndex || 0;
     trackList.innerHTML = "";
     let html = "";
     tracks.forEach((track, index) => {
+        console.log(track);
         html += `<div class="track-item ${
             index === currentTrackIndex ? "playing" : ""
-        }" data-index=${index} >
+        }" data-index="${index}">
                                 <div class="track-number">
                                      ${
                                          index === currentTrackIndex
@@ -1403,23 +1416,29 @@ function renderTrackList(tracks) {
                                 <div class="track-image">
                                     <img
                                         src="${escapeHtml(
-                                            track.image_url
+                                            track.image_url ||
+                                                track.album_cover_image_url
                                         )}?height=40&width=40"
-                                        alt="Lối Nhỏ"
+                                        alt="${escapeHtml(
+                                            track.title || track.track_title
+                                        )}"
                                     />
                                 </div>
                                 <div class="track-info">
                                     <div class="track-name playing-text">
-                                        ${escapeHtml(track.title)}
+                                        ${escapeHtml(
+                                            track.title || track.track_title
+                                        )}
                                     </div>
                                 </div>
                                 <div class="track-plays">${escapeHtml(
-                                    track.play_count
+                                    track.play_count || track.track_play_count
                                 )}</div>
-                                <div class="track-duration">${escapeHtml(
-                                    (track.duration - (track.duration % 60)) /
-                                        60
-                                )}:${escapeHtml(track.duration % 60)}
+                                <div class="track-duration">${convertTimeStr(
+                                    escapeHtml(
+                                        track.duration || track.track_duration
+                                    )
+                                )}                                    
                                 </div>
                                 <button class="track-menu-btn">
                                     <i class="fas fa-ellipsis-h"></i>
@@ -1688,3 +1707,11 @@ const musicPlayer = {
         }
     },
 };
+function convertTimeStr(durationSrt) {
+    const duration = parseInt(durationSrt);
+    const result =
+        (duration - (duration % 60)) / 60 +
+        ":" +
+        (duration % 60).toString().padStart(2, "0");
+    return result;
+}
