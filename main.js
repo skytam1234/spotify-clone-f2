@@ -1442,10 +1442,10 @@ function renderTrackList(tracks) {
     const artistHeroSubtitle = document.querySelector(".artist-hero-subtitle");
     const heroImage = document.querySelector(".hero-image");
     const trackList = document.querySelector(".track-list");
-    console.log(tracks);
 
     let currentTrackIndex;
-    //const itemData = JSON.parse(localStorage.getItem("item"));
+    const itemData = JSON.parse(localStorage.getItem("item"));
+    const currentItem = musicPlayer.currentItem;
     const currentPlayer = JSON.parse(localStorage.getItem("currentPlayer"));
 
     currentPlayer.currentTrackIndex
@@ -1506,20 +1506,41 @@ function renderTrackList(tracks) {
                             </div>`;
     });
 
-    heroImage.src =
-        tracks[currentTrackIndex]?.image_url ||
-        tracks[currentTrackIndex]?.album_cover_image_url ||
-        tracks[currentTrackIndex]?.album_cover_image_url;
-    artistHeroTitle.textContent =
-        tracks[currentTrackIndex]?.title ||
-        tracks[currentTrackIndex]?.track_title ||
-        tracks[currentTrackIndex]?.name ||
-        tracks[currentTrackIndex]?.title;
-    artistHeroSubtitle.textContent =
-        tracks[currentTrackIndex]?.artist_name ||
-        tracks[currentTrackIndex]?.artist_name ||
-        tracks[currentTrackIndex]?.description ||
-        tracks[currentTrackIndex]?.bio;
+    if (
+        !currentItem ||
+        currentItem.id !== itemData.id ||
+        currentItem.type !== itemData.type
+    ) {
+        heroImage.src =
+            tracks[0]?.image_url ||
+            tracks[0]?.album_cover_image_url ||
+            tracks[0]?.album_cover_image_url;
+        artistHeroTitle.textContent =
+            tracks[0]?.title ||
+            tracks[0]?.track_title ||
+            tracks[0]?.name ||
+            tracks[0]?.title;
+        artistHeroSubtitle.textContent =
+            tracks[0]?.artist_name ||
+            tracks[0]?.artist_name ||
+            tracks[0]?.description ||
+            tracks[currentTrackIndex]?.bio;
+    } else {
+        heroImage.src =
+            tracks[currentTrackIndex]?.image_url ||
+            tracks[currentTrackIndex]?.album_cover_image_url ||
+            tracks[currentTrackIndex]?.album_cover_image_url;
+        artistHeroTitle.textContent =
+            tracks[currentTrackIndex]?.title ||
+            tracks[currentTrackIndex]?.track_title ||
+            tracks[currentTrackIndex]?.name ||
+            tracks[currentTrackIndex]?.title;
+        artistHeroSubtitle.textContent =
+            tracks[currentTrackIndex]?.artist_name ||
+            tracks[currentTrackIndex]?.artist_name ||
+            tracks[currentTrackIndex]?.description ||
+            tracks[currentTrackIndex]?.bio;
+    }
     trackList.innerHTML = html;
 }
 const musicPlayer = {
