@@ -33,11 +33,6 @@ document.addEventListener("DOMContentLoaded", async function () {
         ".dropdown-search-library"
     );
 
-    const artistHero = document.querySelector(".artist-hero");
-    const artistControls = document.querySelector(".artist-controls");
-    const popularSection = document.querySelector(".popular-section");
-    const hitsSection = document.querySelector(".hits-section");
-    const artistsSection = document.querySelector(".artists-section");
     const playlistSection = document.querySelector(".playlist-section");
     const playlistSearchInput = document.querySelector(
         "#playlist-search__input"
@@ -318,9 +313,11 @@ document.addEventListener("DOMContentLoaded", async function () {
         const artists = await getArtistFollows();
         await myArtistFollows(artists);
     });
+
     //xử lý click vào libraryContent để mở ra 1 bộ sưu tập
     libraryContent.addEventListener("click", async function (e) {
         e.preventDefault;
+        const libraryItemLiked = e.target.closest(".library-item-liked");
         const libraryItemOld = libraryContent.querySelector(
             ".library-item.active"
         );
@@ -393,6 +390,57 @@ document.addEventListener("DOMContentLoaded", async function () {
             } catch (error) {}
 
             libraryItem.classList.add(`active`);
+        }
+        if (libraryItemLiked) {
+            const itemData = {
+                type: `track`,
+                id: null,
+            };
+            localStorage.setItem("item", JSON.stringify(itemData));
+            try {
+                const { tracks } = await httpRequest.get(
+                    `me/tracks/liked?limit=20&offset=0`
+                );
+
+                if (tracks.length > 0) {
+                    await renderTrackList(tracks);
+
+                    const data = {
+                        currentPlaylist: tracks,
+                        currentTrackIndex: 0,
+                    };
+                    localStorage.setItem("futurePlayer", JSON.stringify(data));
+                    toggleMainContent(
+                        false,
+                        false,
+                        false,
+                        false,
+                        true,
+                        true,
+                        true,
+                        false
+                    );
+                } else {
+                    const artistHeroTitle =
+                        document.querySelector(".artist-hero-title");
+                    const artistHeroSubtitle = document.querySelector(
+                        ".artist-hero-subtitle"
+                    );
+
+                    artistHeroTitle.textContent = tracks[0].title;
+                    artistHeroSubtitle.textContent = tracks[0].artist_name;
+                    toggleMainContent(
+                        false,
+                        false,
+                        false,
+                        false,
+                        true,
+                        false,
+                        true,
+                        true
+                    );
+                }
+            } catch (error) {}
         }
     });
 
@@ -985,9 +1033,9 @@ document.addEventListener("DOMContentLoaded", async function () {
 });
 document.addEventListener("DOMContentLoaded", function () {
     document.body.style.userSelect = "none";
-    // document.addEventListener("contextmenu", (e) => {
-    //     e.preventDefault();
-    // });
+    document.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+    });
     const searchInput = document.querySelector(".search-input");
     let timeDelay;
     searchInput.addEventListener("input", () => {
@@ -1179,9 +1227,10 @@ async function myPlaylist(list, type) {
                 libraryContent.appendChild(playlistItem);
             });
         });
+        //gọi danh sách bài hát đã like
         const res = await httpRequest.get("me/tracks/liked?limit=20&offset=0");
         const divElement = document.createElement("div");
-        divElement.innerHTML = `<div class="library-item active">       
+        divElement.innerHTML = `<div class="library-item active library-item-liked">       
                                     <div class="item-icon liked-songs">
                                         <i class="fas fa-heart"></i>
                                     </div>
@@ -1393,16 +1442,18 @@ function renderTrackList(tracks) {
     const artistHeroSubtitle = document.querySelector(".artist-hero-subtitle");
     const heroImage = document.querySelector(".hero-image");
     const trackList = document.querySelector(".track-list");
+    console.log(tracks);
 
     let currentTrackIndex;
     //const itemData = JSON.parse(localStorage.getItem("item"));
     const currentPlayer = JSON.parse(localStorage.getItem("currentPlayer"));
 
-    currentTrackIndex = currentPlayer?.currentTrackIndex || 0;
+    currentPlayer.currentTrackIndex
+        ? (currentTrackIndex = currentPlayer?.currentTrackIndex)
+        : (currentTrackIndex = 0);
     trackList.innerHTML = "";
     let html = "";
     tracks.forEach((track, index) => {
-        console.log(track);
         html += `<div class="track-item ${
             index === currentTrackIndex ? "playing" : ""
         }" data-index="${index}">
@@ -1416,27 +1467,36 @@ function renderTrackList(tracks) {
                                 <div class="track-image">
                                     <img
                                         src="${escapeHtml(
-                                            track.image_url ||
-                                                track.album_cover_image_url
+                                            track.image_url
+                                                ? track.image_url
+                                                : track.album_cover_image_url
                                         )}?height=40&width=40"
                                         alt="${escapeHtml(
-                                            track.title || track.track_title
+                                            track.title
+                                                ? track.title
+                                                : track.track_title
                                         )}"
                                     />
                                 </div>
                                 <div class="track-info">
                                     <div class="track-name playing-text">
                                         ${escapeHtml(
-                                            track.title || track.track_title
+                                            track.title
+                                                ? track.title
+                                                : track.track_title
                                         )}
                                     </div>
                                 </div>
                                 <div class="track-plays">${escapeHtml(
-                                    track.play_count || track.track_play_count
+                                    track.play_count
+                                        ? track.play_count
+                                        : track.track_play_count
                                 )}</div>
                                 <div class="track-duration">${convertTimeStr(
                                     escapeHtml(
-                                        track.duration || track.track_duration
+                                        track.duration
+                                            ? track.duration
+                                            : track.track_duration
                                     )
                                 )}                                    
                                 </div>
@@ -1448,6 +1508,7 @@ function renderTrackList(tracks) {
 
     heroImage.src =
         tracks[currentTrackIndex]?.image_url ||
+        tracks[currentTrackIndex]?.album_cover_image_url ||
         tracks[currentTrackIndex]?.album_cover_image_url;
     artistHeroTitle.textContent =
         tracks[currentTrackIndex]?.title ||
