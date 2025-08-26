@@ -710,6 +710,12 @@ document.addEventListener("DOMContentLoaded", function () {
 // Other functionality
 document.addEventListener("DOMContentLoaded", async function () {
     // TODO: Implement other functionality here
+
+    const tooltipTitle = document.querySelector(".tooltip-title");
+    const shuffleBtn = document.querySelector(".btn-shuffle");
+    const btnPrev = document.querySelector(".btn-prev");
+    const btnNext = document.querySelector(".btn-next");
+    const btnLoop = document.querySelector(".btn-loop");
     toggleMainContent(true, true, true);
     const { albums } = await httpRequest.get(`albums/popular?limit=20`);
     const resTracks = await httpRequest.get("tracks/trending?limit=20");
@@ -729,6 +735,46 @@ document.addEventListener("DOMContentLoaded", async function () {
         musicPlayer.currentSongIndex = currentPlayer.currentTrackIndex;
         musicPlayer.isPlaying = false;
     }
+    shuffleBtn.addEventListener("mouseenter", (e) => {
+        const mes = "Enable shuffle";
+        const isShuffle =
+            localStorage.getItem("musicPlayer_shuffleMode") == true;
+        isShuffle ? (mes = "Disable shuffle") : (mes = "Enable shuffle");
+        tippy("#btnShuffle", {
+            content: "Nội dung ban đầu",
+            placement: "top",
+        });
+    });
+
+    btnLoop.addEventListener("mouseenter", (e) => {
+        tooltip.left = e.screenX + "px";
+        tooltip.classList.add("show");
+
+        const isLoop = localStorage.getItem("musicPlayer_loopMode") == true;
+        isLoop
+            ? (tooltipTitle.textContent = "Disable loop")
+            : (tooltipTitle.textContent = "Enable loop");
+    });
+    btnLoop.addEventListener("mouseleave", (e) => {
+        tooltip.classList.remove("show");
+    });
+    btnNext.addEventListener("mouseenter", (e) => {
+        tooltip.left = e.screenX + "px";
+        tooltip.classList.add("show");
+        tooltipTitle.textContent = "Qua bài";
+    });
+    btnNext.addEventListener("mouseleave", (e) => {
+        tooltip.classList.remove("show");
+    });
+    btnPrev.addEventListener("mouseenter", (e) => {
+        tooltip.left = e.screenX + "px";
+
+        tooltip.classList.add("show");
+        tooltipTitle.textContent = "Lùi bài";
+    });
+    btnPrev.addEventListener("mouseleave", (e) => {
+        tooltip.classList.remove("show");
+    });
 });
 document.addEventListener("DOMContentLoaded", async function () {
     const contentWrapper = document.querySelector(".content-wrapper");
@@ -882,12 +928,10 @@ document.addEventListener("DOMContentLoaded", async function () {
                     musicPlayer.isPlaying = true;
                     musicPlayer.currentSongIndex = -1;
                     musicPlayer.initialize();
-                    console.log(musicPlayer);
                 } catch (error) {
-                    musicPlayer.isPlaying = true;
-                    musicPlayer.currentSongIndex = 0;
-                    musicPlayer.initialize();
-                    console.log(musicPlayer);
+                    // musicPlayer.isPlaying = true;
+                    // musicPlayer.currentSongIndex = 0;
+                    // musicPlayer.initialize();
                 }
             } else {
                 iconPlayBtnLarge.classList.toggle("fa-pause");
@@ -1033,9 +1077,9 @@ document.addEventListener("DOMContentLoaded", async function () {
 });
 document.addEventListener("DOMContentLoaded", function () {
     document.body.style.userSelect = "none";
-    document.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
-    });
+    // document.addEventListener("contextmenu", (e) => {
+    //     e.preventDefault();
+    // });
     const searchInput = document.querySelector(".search-input");
     let timeDelay;
     searchInput.addEventListener("input", () => {
@@ -1689,6 +1733,7 @@ const musicPlayer = {
     },
 
     handleSongNavigation(direction) {
+        console.log("ádd");
         this.isPlaying = true;
 
         const shouldResetCurrentSong =

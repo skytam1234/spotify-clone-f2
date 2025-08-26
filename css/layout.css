@@ -293,6 +293,26 @@
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
+    position: relative;
+}
+
+.tooltip {
+    position: absolute;
+    padding: 10px;
+    min-width: 120px;
+    min-height: 30px;
+    border-radius: var(--radius-md);
+    background: var(--bg-tertiary);
+    top: -40px;
+    transform: translateX(-50%);
+    opacity: 0;
+    visibility: hidden;
+    z-index: 1000;
+    transition: all ease 1s;
+}
+.tooltip.show {
+    opacity: 1;
+    visibility: visible;
 }
 
 .progress-container {
