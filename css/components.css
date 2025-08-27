@@ -20,8 +20,6 @@
 }
 .context-menu {
     position: absolute;
-    width: 160px;
-    height: 60px;
     padding: 10px;
     z-index: 1000;
     background-color: var(--bg-hover);
@@ -38,7 +36,7 @@
     height: 40px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 10px;
 }
 .context-menu-item:hover {

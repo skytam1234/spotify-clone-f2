@@ -395,7 +395,28 @@ document.addEventListener("DOMContentLoaded", async function () {
     libraryContent.oncontextmenu = function (e) {
         e.preventDefault;
         const libraryItem = e.target.closest(".library-item");
+        const type = libraryItem.dataset.type;
+        const id = libraryItem.dataset.id;
+        const data = {
+            type: type,
+            id: id,
+        };
         if (libraryItem) {
+            type === "artist"
+                ? (contextMenu.innerHTML = `<div class="context-menu-item unfollow-menu-btn">
+                <i class="fa-solid fa-xmark"></i>
+                <span class="context-menu-title">Unfollow</span>
+            </div>`)
+                : (contextMenu.innerHTML = `<div class="context-menu-item delete-menu-btn">
+                <i class="fa-solid fa-xmark"></i>
+                <span class="context-menu-title">Delete</span>               
+            </div>
+            <div class="context-menu-item remove-menu-btn">
+                <i class="fa-solid fa-xmark"></i>
+                <span class="context-menu-title">Remove from profile</span>               
+            </div>
+            `);
+            localStorage.setItem("currentContextMenu", JSON.stringify(data));
             contextMenu.style.top = e.clientY + "px";
             contextMenu.style.left =
                 libraryItem.offsetLeft + libraryItem.offsetWidth + 10 + "px";
@@ -403,6 +424,74 @@ document.addEventListener("DOMContentLoaded", async function () {
             libraryItem.classList.add("active");
         }
     };
+    contextMenu.addEventListener("click", async (e) => {
+        const data = JSON.parse(localStorage.getItem("currentContextMenu"));
+        const deletePlaylist = e.target.closest(".delete-menu-btn");
+        const unfollowMenuBtn = e.target.closest(".unfollow-menu-btn");
+        const removeMenuBtn = e.target.closest(".remove-menu-btn");
+        if (deletePlaylist) {
+            try {
+                const res = await httpRequest.delete(`playlists/${data.id}`);
+                const playlist = await getMyPlayLists();
+                await myPlaylist([playlist], "playlist");
+                console.log(res);
+                iziToast.info({
+                    title: "Thông Báo",
+                    message: "Đã xóa khỏi thư viện thành công!",
+                    position: "topCenter",
+                });
+            } catch (error) {
+                iziToast.info({
+                    title: "Thông Báo",
+                    message: "Xóa khỏi thư viện thất bại!",
+                    position: "topCenter",
+                });
+            }
+        }
+        if (unfollowMenuBtn) {
+            try {
+                const res = await httpRequest.delete(
+                    `artists/${data.id}/follow`
+                );
+                const artists = await getArtistFollows();
+                await myArtistFollows(artists);
+
+                iziToast.info({
+                    title: "Thông Báo",
+                    message: "Hủy follow thành công",
+                    position: "topCenter",
+                });
+            } catch (error) {
+                iziToast.info({
+                    title: "Thông Báo",
+                    message: "Hủy follow thất bại",
+                    position: "topCenter",
+                });
+            }
+        }
+        if (removeMenuBtn) {
+            try {
+                const res = await httpRequest.delete(
+                    `playlists/${data.id}/follow`
+                );
+                const playlist = await getMyPlayLists();
+                await myPlaylist([playlist], "playlist");
+                console.log(res);
+                iziToast.info({
+                    title: "Thông Báo",
+                    message: "Đã xóa khỏi thư viện thành công!",
+                    position: "topCenter",
+                });
+            } catch (error) {
+                iziToast.info({
+                    title: "Thông Báo",
+                    message: "Xóa khỏi thư viện thất bại!",
+                    position: "topCenter",
+                });
+            }
+        }
+        contextMenu.classList.remove("show");
+    });
     //xử lý click vào libraryContent để mở ra 1 bộ sưu tập
     libraryContent.addEventListener("click", async function (e) {
         e.preventDefault;
@@ -729,7 +818,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const playlistDropdown = document.querySelector(".playlist-dropdown");
     const createPlaylistModal = document.querySelector(".create-btn");
     const contextMenu = document.querySelector(".context-menu");
-    const libraryContent = document.querySelector(".library-content");
 
     // Toggle dropdown when clicking avatar
     userAvatar.addEventListener("click", function (e) {
