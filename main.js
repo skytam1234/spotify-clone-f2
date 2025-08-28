@@ -314,7 +314,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     // Load lại danh sách playlist của mình
     navPlaylistBtn.addEventListener("click", async function () {
         const playlists = JSON.parse(localStorage.getItem("myPlaylists"));
-        console.log(playlists);
         await myPlaylist([playlists], "playlist");
     });
     // load lại danh sách artist đã follow, chua co API de lam
@@ -745,26 +744,20 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
     playlistPopupContent.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const playlistPopupName = document.querySelector(
-            ".playlist-popup-name"
-        );
-        const playlistPopupDescription = document.querySelector(
-            ".playlist-popup-description"
-        );
         const currentPlaylist = JSON.parse(localStorage.getItem("item"));
-        const data = {
-            name: playlistPopupName.value,
-            description: playlistPopupDescription.value,
-            image_url: playlistEditImg.src,
-        };
+        const data = Object.fromEntries(new FormData(playlistPopupContent));
 
         try {
             const res = await httpRequest.put(
-                `playlists/${currentPlaylist.id}`,
+                `playlist/${currentPlaylist.id}`,
                 data
             );
+            console.log(res);
+
             playlistPopup.classList.remove("show");
             playlistPopupContent.reset();
+            const playlists = await getMyPlayLists();
+            await myPlaylist([playlists], "playlist");
         } catch (error) {}
     });
 
@@ -968,6 +961,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     await artistsTrending(resArtists);
     await albumTrending(albums);
     await renderUserInfo();
+    await getMyPlayLists();
     const myPlaylists = JSON.parse(localStorage.getItem("myPlaylists"));
     if (myPlaylists) {
         await myPlaylist([myPlaylists], "playlist");
